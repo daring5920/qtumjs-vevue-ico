@@ -24,7 +24,7 @@ contract VevueToken is StandardToken, Ownable {
   /// @notice 100 million Vevue tokens will ever be created
   uint256 public constant tokenTotalSupply = 100 * (10**6) * (10**decimals);
 
-
+  // number of tokens sold
   uint256 public tokensSold;
 
   // Crowdsale parameters
@@ -80,7 +80,7 @@ contract VevueToken is StandardToken, Ownable {
     payable
     validAddress(_beneficiary)
     validPurchase
-    // validUnHalt
+    validUnHalt
   {
     uint256 tokenAmount = getTokenExchangeAmount(msg.value, initialExchangeRate, nativeDecimals, decimals);
 
