@@ -1,7 +1,7 @@
 pragma solidity ^0.4.11;
 
-import './StandardToken.sol';
-import './Ownable.sol';
+import "./StandardToken.sol";
+import "./Ownable.sol";
 
 contract VevueToken is StandardToken, Ownable {
   // Token configurations
@@ -10,8 +10,9 @@ contract VevueToken is StandardToken, Ownable {
   uint256 public constant nativeDecimals = 8;
   uint256 public constant decimals = 8;
 
-  uint256 public constant _fundingStartBlock = 35000;
-  uint256 public constant _fundingEndBlock = 90000;
+  // uint256 public constant _fundingStartBlock = 500;
+  // 604800 seconds is 7 days. about 5040 blocks
+  // uint256 public constant _fundingEndBlock = 10000;
   uint256 public constant _initialExchangeRate = 100;
 
   /// the founder address can set this to true to halt the crowdsale due to emergency
@@ -23,9 +24,12 @@ contract VevueToken is StandardToken, Ownable {
   /// @notice 100 million Vevue tokens will ever be created
   uint256 public constant tokenTotalSupply = 100 * (10**6) * (10**decimals);
 
+
+  uint256 public tokensSold;
+
   // Crowdsale parameters
-  uint256 public fundingStartBlock;
-  uint256 public fundingEndBlock;
+  // uint256 public fundingStartBlock;
+  // uint256 public fundingEndBlock;
   uint256 public initialExchangeRate;
 
   // Events
@@ -39,8 +43,8 @@ contract VevueToken is StandardToken, Ownable {
   }
 
   modifier validPurchase() {
-    require(block.number >= fundingStartBlock);
-    require(block.number <= fundingEndBlock);
+    // require(block.number >= fundingStartBlock);
+    // require(block.number <= fundingEndBlock);
     require(msg.value > 0);
     _;
   }
@@ -51,14 +55,16 @@ contract VevueToken is StandardToken, Ownable {
   }
 
   /// @notice Creates new Vevue Token contract
-  function VevueToken() {
-    require(_fundingStartBlock >= block.number);
-    require(_fundingEndBlock >= _fundingStartBlock);
+  function VevueToken() public
+    Ownable()
+  {
+    // require(_fundingStartBlock >= block.number);
+    // require(_fundingEndBlock >= _fundingStartBlock);
     require(_initialExchangeRate > 0);
     assert(nativeDecimals >= decimals);
 
-    fundingStartBlock = _fundingStartBlock;
-    fundingEndBlock = _fundingEndBlock;
+    // fundingStartBlock = _fundingStartBlock;
+    // fundingEndBlock = _fundingEndBlock;
     initialExchangeRate = _initialExchangeRate;
   }
 
@@ -69,17 +75,19 @@ contract VevueToken is StandardToken, Ownable {
 
   /// @notice Allows buying tokens from different address than msg.sender
   /// @param _beneficiary Address that will contain the purchased tokens
-  function buyTokens(address _beneficiary) 
-    payable 
-    validAddress(_beneficiary) 
+  function buyTokens(address _beneficiary)
+    public
+    payable
+    validAddress(_beneficiary)
     validPurchase
-    validUnHalt
+    // validUnHalt
   {
     uint256 tokenAmount = getTokenExchangeAmount(msg.value, initialExchangeRate, nativeDecimals, decimals);
-    uint256 checkedSupply = totalSupply.add(tokenAmount);
+
+    tokensSold = tokensSold.add(tokenAmount);
 
     // Ensure new token increment does not exceed the sale amount
-    assert(checkedSupply <= saleAmount);
+    assert(tokensSold <= saleAmount);
 
     mint(_beneficiary, tokenAmount);
     TokenPurchase(msg.sender, _beneficiary, msg.value, tokenAmount);
@@ -89,7 +97,7 @@ contract VevueToken is StandardToken, Ownable {
 
   /// @notice Allows contract owner to mint tokens at any time
   /// @param _amount Amount of tokens to mint in lowest denomination of VEVUE
-  function mintReservedTokens(uint256 _amount) onlyOwner {
+  function mintReservedTokens(uint256 _amount) public onlyOwner {
     uint256 checkedSupply = totalSupply.add(_amount);
     require(checkedSupply <= tokenTotalSupply);
 
@@ -103,12 +111,13 @@ contract VevueToken is StandardToken, Ownable {
   /// @param _decimals Number of decimals of Vevue token
   /// @return The amount of Vevue that will be received
   function getTokenExchangeAmount(
-    uint256 _Amount, 
+    uint256 _Amount,
     uint256 _exchangeRate,
-    uint256 _nativeDecimals, 
-    uint256 _decimals) 
-    constant 
-    returns(uint256) 
+    uint256 _nativeDecimals,
+    uint256 _decimals)
+    public
+    constant
+    returns(uint256)
   {
     require(_Amount > 0);
 
@@ -119,7 +128,7 @@ contract VevueToken is StandardToken, Ownable {
   /// @dev Sends Qtum to the contract owner
   function forwardFunds() internal {
     owner.transfer(msg.value);
-  } 
+  }
 
   /// @dev Mints new tokens
   /// @param _to Address to mint the tokens to
@@ -133,11 +142,11 @@ contract VevueToken is StandardToken, Ownable {
   }
 
   /// Emergency Stop ICO
-  function halt() onlyOwner {
-      halted = true;
+  function halt() public onlyOwner {
+    halted = true;
   }
 
-  function unhalt() onlyOwner {
-      halted = false;
+  function unhalt() public onlyOwner {
+    halted = false;
   }
 }
