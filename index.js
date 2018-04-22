@@ -7,21 +7,21 @@ const qtum = new Qtum("http://qtum:test@localhost:3889", repoData)
 
 const mytoken = qtum.contract("VevueToken.sol")
 
+let decimals = 8
+function tokenAmount(bnumber) {
+  const nstr = bnumber.toString()
+  const amountUnit = nstr.substring(0, nstr.length - decimals)
+  const amountDecimals = nstr.substring(nstr.length - decimals)
+
+  return `${amountUnit === "" ? 0 : amountUnit}.${amountDecimals}`
+}
+
 async function showInfo() {
-  const decimals = await mytoken.returnNumber("decimals")
   const totalSupply = await mytoken.return("totalSupply")
   const saleAmount = await mytoken.return("saleAmount")
   const tokensSold = await mytoken.return("tokensSold")
 
   const tokenTotalSupply = (await mytoken.call("tokenTotalSupply")).outputs[0]
-
-  function tokenAmount(bnumber) {
-    const nstr = bnumber.toString()
-    const amountUnit = nstr.substring(0, nstr.length - decimals)
-    const amountDecimals = nstr.substring(nstr.length - decimals)
-
-    return `${amountUnit === "" ? 0 : amountUnit}.${amountDecimals}`
-  }
 
   console.log("supply cap:", tokenAmount(tokenTotalSupply))
   console.log("sales cap:", tokenAmount(saleAmount))
@@ -49,6 +49,11 @@ async function mintTokens(amount) {
   console.log(res)
 }
 
+async function tokenBalance(address) {
+  const balance = await mytoken.return("balanceOf", [address])
+  console.log(tokenAmount(balance))
+}
+
 async function main() {
   const argv = process.argv.slice(2)
 
@@ -70,6 +75,10 @@ async function main() {
       }
       await buyTokens(argv[1], buyAmount)
       break
+    case "balanceOf":
+      await tokenBalance(argv[1])
+      break
+
     case "mint":
       const mintAmount = parseFloat(argv[1])
       if (!mintAmount) {
